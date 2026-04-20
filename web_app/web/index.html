@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="C2C Command & Control Center - High-performance dashbaord for emergency response and tactical unit dispatch.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://c2c-platform-5a1c2.web.app/">
+  <meta property="og:title" content="C2C Command Center">
+  <meta property="og:description" content="State-of-the-art Command & Control Center for tactical operations.">
+  <meta property="og:image" content="https://c2c-platform-5a1c2.web.app/icons/Icon-512.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://c2c-platform-5a1c2.web.app/">
+  <meta property="twitter:title" content="C2C Command Center">
+  <meta property="twitter:description" content="State-of-the-art Command & Control Center for tactical operations.">
+  <meta property="twitter:image" content="https://c2c-platform-5a1c2.web.app/icons/Icon-512.png">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="C2C Command Center">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>C2C Command Center</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0D47A1;
+      overflow: hidden;
+    }
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Inter', sans-serif;
+    }
+    .loading-logo {
+      width: 60px;
+      height: 60px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #1565C0, #00BCD4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 32px rgba(0, 188, 212, 0.3);
+    }
+    .loading-logo svg {
+      width: 32px;
+      height: 32px;
+      fill: white;
+    }
+    .loading-text {
+      color: white;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      margin-bottom: 8px;
+    }
+    .loading-sub {
+      color: rgba(255,255,255,0.6);
+      font-size: 12px;
+      letter-spacing: 2px;
+    }
+    .loading-bar {
+      width: 120px;
+      height: 3px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 3px;
+      margin-top: 32px;
+      overflow: hidden;
+    }
+    .loading-bar-fill {
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(90deg, #00BCD4, #4DD0E1);
+      border-radius: 3px;
+      animation: loading 1.5s ease-in-out infinite;
+    }
+    @keyframes loading {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(350%); }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-container" id="loading">
+    <div class="loading-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+    </div>
+    <div class="loading-text">C2C</div>
+    <div class="loading-sub">COMMAND & CONTROL</div>
+    <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+  </div>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

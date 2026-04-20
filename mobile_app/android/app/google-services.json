@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "998648129612",
+    "project_id": "c2c-platform-5a1c2",
+    "storage_bucket": "c2c-platform-5a1c2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:998648129612:android:a7f38dc0d83ea71d0c2ce9",
+        "android_client_info": {
+          "package_name": "com.example.mobile_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQvYMOM3SMS2LXjTwRszHhVvqb-Wiicgg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
