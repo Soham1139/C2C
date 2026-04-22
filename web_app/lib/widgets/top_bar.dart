@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../providers/app_providers.dart';
+import 'profile_dialog.dart';
 import '../models/notification_model.dart';
 
 class TopBar extends ConsumerWidget {
@@ -279,9 +280,12 @@ class TopBar extends ConsumerWidget {
               if (value == 'logout') {
                 await ref.read(authControllerProvider.notifier).signOut();
               } else if (value == 'profile') {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Profile details coming soon')),
-                );
+                if (userProfile != null) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => ProfileDialog(user: userProfile!),
+                  );
+                }
               }
             },
           ),

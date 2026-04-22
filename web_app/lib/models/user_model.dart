@@ -7,6 +7,7 @@ class UserModel {
   final String name;
   final String email;
   final UserRole role;
+  final bool isBlacklisted;
   final DateTime createdAt;
 
   UserModel({
@@ -14,6 +15,7 @@ class UserModel {
     required this.name,
     required this.email,
     required this.role,
+    this.isBlacklisted = false,
     required this.createdAt,
   });
 
@@ -26,6 +28,7 @@ class UserModel {
         (e) => e.name == (map['role'] ?? 'field'),
         orElse: () => UserRole.field,
       ),
+      isBlacklisted: map['isBlacklisted'] ?? false,
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
@@ -35,6 +38,7 @@ class UserModel {
       'name': name,
       'email': email,
       'role': role.name,
+      'isBlacklisted': isBlacklisted,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }

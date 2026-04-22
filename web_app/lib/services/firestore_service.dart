@@ -52,6 +52,14 @@ class FirestoreService {
     );
   }
 
+  Future<void> updateUserStatus(String userId, bool isBlacklisted) async {
+    await _db.collection('users').doc(userId).update({'isBlacklisted': isBlacklisted});
+    await _auditLogService.logAction(
+      action: isBlacklisted ? 'User blacklisted' : 'User unblacklisted',
+      module: 'User',
+    );
+  }
+
   Stream<List<UserModel>> getUsers() {
     return _db
         .collection('users')
@@ -60,6 +68,20 @@ class FirestoreService {
         .map((snapshot) => snapshot.docs
             .map((doc) => UserModel.fromMap(doc.data(), doc.id))
             .toList());
+  }
+
+  Stream<List<Map<String, dynamic>>> getOrganizations() {
+    return _db.collection('organizations').snapshots().map((snapshot) =>
+        snapshot.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList());
+  }
+
+  Future<void> updateOrganization(String orgId, Map<String, dynamic> data) async {
+    await _db.collection('organizations').doc(orgId).set(data, SetOptions(merge: true));
+    await _auditLogService.logAction(
+      action: 'Organization updated',
+      module: 'Admin',
+      newValue: orgId,
+    );
   }
 
   Stream<Map<String, int>> getDashboardStats() {

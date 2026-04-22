@@ -27,7 +27,16 @@ final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
       .snapshots()
       .map((doc) {
         if (!doc.exists || doc.data() == null) return null;
-        return UserModel.fromMap(doc.data()!, doc.id);
+        final profile = UserModel.fromMap(doc.data()!, doc.id);
+        
+        // Blacklist enforcement
+        if (profile.isBlacklisted) {
+          // Trigger logout asynchronously to avoid modifying state during build
+          Future.microtask(() => ref.read(authControllerProvider.notifier).signOut());
+          return null;
+        }
+        
+        return profile;
       });
 });
 
@@ -141,3 +150,7 @@ class StatusFilterNotifier extends Notifier<IncidentStatus?> {
   void set(IncidentStatus? val) => state = val;
 }
 final statusFilterProvider = NotifierProvider<StatusFilterNotifier, IncidentStatus?>(StatusFilterNotifier.new);
+
+final organizationsStreamProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
+  return ref.watch(firestoreServiceProvider).getOrganizations();
+});

@@ -5,6 +5,8 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/app_providers.dart';
 import '../../models/user_model.dart';
 import '../../services/firestore_service.dart';
+import '../widgets/organization_dialog.dart';
+import '../widgets/super_admin_settings_dialog.dart';
 
 class SuperAdminDashboard extends ConsumerWidget {
   const SuperAdminDashboard({super.key});
@@ -13,6 +15,7 @@ class SuperAdminDashboard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final usersAsync = ref.watch(usersStreamProvider);
+    final orgsAsync = ref.watch(organizationsStreamProvider);
     final statsAsync = ref.watch(dashboardStatsProvider);
 
     return SingleChildScrollView(
@@ -20,14 +23,36 @@ class SuperAdminDashboard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'System Overview',
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white : AppColors.textPrimary,
-              letterSpacing: -0.5,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'System Overview',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : AppColors.textPrimary,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const SuperAdminSettingsDialog(),
+                  );
+                },
+                icon: const Icon(Icons.settings_suggest_rounded, size: 18),
+                label: const Text('Platform Settings'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                  foregroundColor: AppColors.primary,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           statsAsync.when(
@@ -67,39 +92,73 @@ class SuperAdminDashboard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkCard : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? AppColors.darkBorder : AppColors.border,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Default Organization', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text('Main tenant for Command & Control', style: GoogleFonts.inter(color: AppColors.textSecondary)),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Edit Organization clicked')));
-                  },
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text('Manage'),
-                ),
-              ],
-            ),
+          orgsAsync.when(
+            data: (orgs) {
+              if (orgs.isEmpty) {
+                return _buildEmptyOrgState(context);
+              }
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: orgs.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final org = orgs[index];
+                  return Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkCard : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? AppColors.darkBorder : AppColors.border,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(org['name'] ?? 'Untitled Organization', 
+                                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text(org['description'] ?? 'No description provided', 
+                                style: GoogleFonts.inter(color: AppColors.textSecondary)),
+                            if (org['emergencyPhone'] != null) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.phone_active_rounded, size: 14, color: AppColors.error),
+                                  const SizedBox(width: 4),
+                                  Text(org['emergencyPhone'], 
+                                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.error)),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                             showDialog(
+                              context: context,
+                              builder: (context) => OrganizationDialog(orgData: org),
+                            );
+                          },
+                          icon: const Icon(Icons.edit, size: 16),
+                          label: const Text('Manage'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error loading organizations: $err')),
           ),
           const SizedBox(height: 40),
           Text(
-            'User Management (Role Control)',
+            'Admin & User Management',
             style: GoogleFonts.inter(
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -127,25 +186,45 @@ class SuperAdminDashboard extends ConsumerWidget {
                 ),
                 itemBuilder: (context, index) {
                   final user = users[index];
+                  // Filter logic: Super Admin can see everyone, but focuses on Admins
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                     child: Row(
                       children: [
                         CircleAvatar(
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
-                          child: Text(user.name.isNotEmpty ? user.name[0].toUpperCase() : '?', style: const TextStyle(color: AppColors.primary)),
+                          backgroundColor: user.isBlacklisted 
+                            ? Colors.red.withValues(alpha: 0.1) 
+                            : AppColors.primary.withValues(alpha: 0.1),
+                          child: Text(
+                            user.name.isNotEmpty ? user.name[0].toUpperCase() : '?', 
+                            style: TextStyle(color: user.isBlacklisted ? Colors.red : AppColors.primary)
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(user.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                              Row(
+                                children: [
+                                  Text(user.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                  if (user.isBlacklisted) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(4)),
+                                      child: Text('BLACKLISTED', style: GoogleFonts.inter(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ],
+                              ),
                               Text(user.email, style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
                             ],
                           ),
                         ),
                         _buildRoleDropdown(context, ref, user),
+                        const SizedBox(width: 16),
+                        _buildBlacklistToggle(context, ref, user),
                       ],
                     ),
                   );
@@ -160,23 +239,71 @@ class SuperAdminDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildRoleDropdown(BuildContext context, WidgetRef ref, UserModel user) {
-    return DropdownButton<UserRole>(
-      value: user.role,
-      underline: const SizedBox(),
-      items: UserRole.values.map((role) {
-        return DropdownMenuItem(
-          value: role,
-          child: Text(role.name.toUpperCase()),
+  Widget _buildEmptyOrgState(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(48),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.business_rounded, size: 48, color: AppColors.primary),
+          const SizedBox(height: 16),
+          Text('No Organizations Found', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text('Initialize your first organization to start managing tenants.', 
+            style: GoogleFonts.inter(color: AppColors.textSecondary), textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => const OrganizationDialog(),
+              );
+            },
+            child: const Text('Add Organization'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBlacklistToggle(BuildContext context, WidgetRef ref, UserModel user) {
+     return IconButton(
+      tooltip: user.isBlacklisted ? 'Remove from Blacklist' : 'Blacklist User',
+      icon: Icon(
+        user.isBlacklisted ? Icons.security_update_good_rounded : Icons.person_off_rounded,
+        color: user.isBlacklisted ? Colors.green : Colors.red,
+      ),
+      onPressed: () async {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(user.isBlacklisted ? 'Unblock User?' : 'Blacklist User?'),
+            content: Text(user.isBlacklisted 
+              ? 'Are you sure you want to restore access for ${user.name}?' 
+              : 'This will immediately revoke all access for ${user.name}. They will be logged out and cannot log back in.'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true), 
+                child: Text(user.isBlacklisted ? 'Restore' : 'Blacklist', style: TextStyle(color: user.isBlacklisted ? Colors.green : Colors.red)),
+              ),
+            ],
+          ),
         );
-      }).toList(),
-      onChanged: (newRole) async {
-        if (newRole != null && newRole != user.role) {
+
+        if (confirmed == true) {
           try {
-            await ref.read(firestoreServiceProvider).updateUserRole(user.id, newRole.name);
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Role updated successfully.')));
+            await ref.read(firestoreServiceProvider).updateUserStatus(user.id, !user.isBlacklisted);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(user.isBlacklisted ? 'User restored.' : 'User blacklisted.'))
+            );
           } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update role: $e'), backgroundColor: Colors.red));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Action failed: $e'), backgroundColor: Colors.red));
           }
         }
       },

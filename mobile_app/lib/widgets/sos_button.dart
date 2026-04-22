@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import '../providers/dashboard_provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -51,19 +52,61 @@ class _SOSButtonState extends ConsumerState<SOSButton> with SingleTickerProvider
     );
 
     if (confirmed == true) {
-      final user = ref.read(authServiceProvider).currentUser;
-      if (user != null) {
-        // In a real app, we would get actual GPS coordinates
-        await ref.read(firestoreServiceProvider).triggerSOS(
-          userId: user.uid,
-          location: 'Live GPS Coordinates (simulated)',
+      if (!mounted) return;
+
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.red)),
+      );
+
+      try {
+        // 1. Check Permissions
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+          if (permission == LocationPermission.denied) {
+            throw 'Location permissions are denied';
+          }
+        }
+        
+        if (permission == LocationPermission.deniedForever) {
+          throw 'Location permissions are permanently denied, we cannot request permissions.';
+        }
+
+        // 2. Get Coordinates
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 10),
         );
+
+        final user = ref.read(authServiceProvider).currentUser;
+        if (user != null) {
+          // 3. Trigger SOS
+          await ref.read(firestoreServiceProvider).triggerSOS(
+            userId: user.uid,
+            location: '${position.latitude}, ${position.longitude}',
+          );
+          
+          if (mounted) {
+            Navigator.pop(context); // Close loading indicator
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('SOS TRIGGERED! ASSISTANCE IS ON THE WAY.'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 5),
+              ),
+            );
+          }
+        }
+      } catch (e) {
         if (mounted) {
+          Navigator.pop(context); // Close loading indicator
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('SOS TRIGGERED! ASSISTANCE IS ON THE WAY.'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 5),
+            SnackBar(
+              content: Text('SOS FAILED: $e'),
+              backgroundColor: Colors.orange,
             ),
           );
         }
@@ -85,7 +128,7 @@ class _SOSButtonState extends ConsumerState<SOSButton> with SingleTickerProvider
             color: Colors.red,
             boxShadow: [
               BoxShadow(
-                color: Colors.red.withOpacity(0.5),
+                color: Colors.red.withValue(0.5),
                 blurRadius: 20,
                 spreadRadius: 5,
               ),

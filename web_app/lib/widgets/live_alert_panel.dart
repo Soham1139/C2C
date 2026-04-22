@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/incident_model.dart';
 import '../core/theme/app_theme.dart';
+import '../providers/app_providers.dart';
 
-class LiveAlertPanel extends StatefulWidget {
+class LiveAlertPanel extends ConsumerStatefulWidget {
   final List<IncidentModel> incidents;
   const LiveAlertPanel({super.key, required this.incidents});
 
   @override
-  State<LiveAlertPanel> createState() => _LiveAlertPanelState();
+  ConsumerState<LiveAlertPanel> createState() => _LiveAlertPanelState();
 }
 
-class _LiveAlertPanelState extends State<LiveAlertPanel> with SingleTickerProviderStateMixin {
+class _LiveAlertPanelState extends ConsumerState<LiveAlertPanel> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Color?> _colorAnimation;
 
@@ -92,7 +94,7 @@ class _LiveAlertPanelState extends State<LiveAlertPanel> with SingleTickerProvid
               ),
               ElevatedButton(
                 onPressed: () {
-                  // Scroll to incidents or open tactical view
+                  ref.read(sidebarIndexProvider.notifier).setIndex(1);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
